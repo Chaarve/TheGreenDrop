@@ -400,11 +400,29 @@ export default function WaterPredictionForm({ onLocationSelect }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', fontSize: '12px' }}>
                   {Array.from({ length: 12 }, (_, i) => {
                     const month = new Date(2024, i).toLocaleString('default', { month: 'short' });
-                    const monthly = Math.round(result.recommended_tank_capacity_liters / 12);
+                    const monthFull = new Date(2024, i).toLocaleString('default', { month: 'long' });
+                    
+                    // Get monthly harvestable water if available, otherwise fallback to average
+                    let monthlyHarvest = Math.round(result.recommended_tank_capacity_liters / 12);
+                    if (result.monthly_harvestable && result.monthly_harvestable[monthFull]) {
+                      monthlyHarvest = result.monthly_harvestable[monthFull];
+                    }
+                    
+                    // Get monthly storage requirement if available
+                    let storageReq = null;
+                    if (result.monthly_storage_requirements && result.monthly_storage_requirements[monthFull]) {
+                      storageReq = result.monthly_storage_requirements[monthFull];
+                    }
+                    
                     return (
                       <div key={i} style={{ textAlign: 'center', padding: '5px', background: 'white', borderRadius: '4px' }}>
                         <div style={{ fontWeight: 'bold' }}>{month}</div>
-                        <div style={{ color: '#666' }}>{monthly}L</div>
+                        <div style={{ color: '#2980b9' }}>{monthlyHarvest}L</div>
+                        {storageReq !== null && (
+                          <div style={{ color: '#e67e22', fontSize: '10px', marginTop: '2px' }}>
+                            Storage: {storageReq}L
+                          </div>
+                        )}
                       </div>
                     );
                   })}

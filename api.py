@@ -100,6 +100,10 @@ def predict():
         if features['annual_runoff_m3'] == 0:
             annual_rainfall_m = features['annual_rainfall_mm'] / 1000
             features['annual_runoff_m3'] = roof_area * annual_rainfall_m * features['runoff_coefficient']
+            
+        # Calculate annual harvestable water in liters
+        annual_rainfall_m = features['annual_rainfall_mm'] / 1000
+        annual_harvestable = roof_area * annual_rainfall_m * features['runoff_coefficient'] * 1000  # liters per year
 
         # 4. Prepare data for ML model prediction
         df_features = pd.DataFrame([features])
@@ -128,9 +132,53 @@ def predict():
         annual_rainfall_m = features['annual_rainfall_mm'] / 1000
         annual_harvestable = roof_area * annual_rainfall_m * features['runoff_coefficient'] * 1000  # liters per year
         
-        # Realistic tank capacity for Indian monsoon season (3-4 months)
         # Assuming 200L per person per day for 4 people = 800L/day
         daily_usage = 800  # liters per day
+        
+        # Calculate monthly distribution based on typical Indian rainfall patterns
+        # These percentages represent typical monthly rainfall distribution in India
+        monthly_rainfall_distribution = {
+            'January': 0.01,  # 1% of annual rainfall
+            'February': 0.01,
+            'March': 0.02,
+            'April': 0.03,
+            'May': 0.05,
+            'June': 0.15,    # Monsoon starts
+            'July': 0.25,    # Peak monsoon
+            'August': 0.20,
+            'September': 0.15,
+            'October': 0.08,
+            'November': 0.03,
+            'December': 0.02
+        }
+        
+        # Calculate monthly harvestable water
+        monthly_harvestable = {}
+        monthly_storage_requirements = {}
+        
+        # Define days in each month for more accurate calculations
+        days_in_month = {
+            'January': 31, 'February': 28, 'March': 31, 'April': 30, 
+            'May': 31, 'June': 30, 'July': 31, 'August': 31, 
+            'September': 30, 'October': 31, 'November': 30, 'December': 31
+        }
+        
+        for month, percentage in monthly_rainfall_distribution.items():
+            # Calculate harvestable water for this month
+            month_harvestable = annual_harvestable * percentage
+            monthly_harvestable[month] = int(month_harvestable)
+            
+            # Calculate required storage for this month
+            # Storage needed = monthly usage - harvestable water (if usage > harvest)
+            monthly_usage = daily_usage * days_in_month[month]
+            
+            # If monthly harvest exceeds usage, we need less storage
+            # If monthly harvest is less than usage, we need more storage to compensate
+            storage_requirement = max(monthly_usage - month_harvestable, 0)
+            # Add buffer for dry spells (20%)
+            monthly_storage_requirements[month] = int(storage_requirement * 1.2)
+        
+        # Traditional tank capacity calculation (for backward compatibility)
         monsoon_days = 90  # 3 months of monsoon season
         tank_capacity = min(annual_harvestable * 0.3, daily_usage * monsoon_days)  # Max 30% of annual or 3 months storage
         
@@ -140,6 +188,8 @@ def predict():
             "feasibility_score": float(feasibility_score),
             "recommended_structure": recommended_structure,
             "recommended_tank_capacity_liters": int(tank_capacity),
+            "monthly_storage_requirements": monthly_storage_requirements,
+            "monthly_harvestable": monthly_harvestable,
             "weather_data": weather_data,
             "roof_efficiency": {
                 "runoff_coefficient": features['runoff_coefficient'],
@@ -150,8 +200,8 @@ def predict():
             "recommendations": {
                 "tank_size": f"{int(tank_capacity)} liters",
                 "roof_utilization": f"{roof_area} m²",
-                "annual_harvest": f"{int(tank_capacity)} liters/year",
-                "monthly_average": f"{int(tank_capacity/12)} liters/month"
+                "annual_harvest": f"{int(annual_harvestable)} liters/year",
+                "monthly_average": f"{int(annual_harvestable/12)} liters/month"
             },
             "summary": (
                 f"For your location (lat: {latitude}, lon: {longitude}) with a {roof_type} roof of {roof_area} m², "

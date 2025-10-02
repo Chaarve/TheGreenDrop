@@ -7,18 +7,18 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://thegreendrop-backend.onrender.com',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       },
       // Fallback proxies in case frontend calls bare paths without /api
-      '/weather': { target: 'https://thegreendrop-backend.onrender.com', changeOrigin: true },
-      '/predict': { target: 'https://thegreendrop-backend.onrender.com', changeOrigin: true },
-      '/health': { target: 'https://thegreendrop-backend.onrender.com', changeOrigin: true },
-      '/predictions': { target: 'https://thegreendrop-backend.onrender.com', changeOrigin: true },
-      '/dashboard': { target: 'https://thegreendrop-backend.onrender.com', changeOrigin: true },
-      '/analytics': { target: 'https://thegreendrop-backend.onrender.com', changeOrigin: true },
-      '/export': { target: 'https://thegreendrop-backend.onrender.com', changeOrigin: true }
+      '/weather': { target: 'http://localhost:5000', changeOrigin: true },
+      '/predict': { target: 'http://localhost:5000', changeOrigin: true },
+      '/health': { target: 'http://localhost:5000', changeOrigin: true },
+      '/predictions': { target: 'http://localhost:5000', changeOrigin: true },
+      '/dashboard': { target: 'http://localhost:5000', changeOrigin: true },
+      '/analytics': { target: 'http://localhost:5000', changeOrigin: true },
+      '/export': { target: 'http://localhost:5000', changeOrigin: true }
     }
   }
 })
